@@ -1,6 +1,6 @@
 # **Comprehensive Evaluation Toolkit for Photoluminescent Radiative Cooling (PL-RC) Materials**
 
-[![DOI]](https://zenodo.org/badge/DOI/10.5281/zenodo.xxxxxxx.svg)](https://doi.org/10.5281/zenodo.xxxxxxx)
+[![DOI]](https://doi.org/10.5281/zenodo.21335044)
 
 ## Overview
 This repository contains the **complete suite of** custom MATLAB scripts used for the **data processing and evaluation procedures** described in our *Nature Protocols* manuscript: "Spectral characterization and calorimetric validation of photoluminescent radiative cooling materials". 
@@ -40,7 +40,7 @@ If you use this code in your research, please cite our protocol and the Zenodo a
 
 > [Authors]. [Title]. *Nature Protocols* (2026). DOI: [xxx]
 > 
-> [Authors]. **PLRC_EvaluationToolkit** (Version v1.0.0). *Zenodo*. https://doi.org/10.5281/zenodo.xxxxxxx
+> [Authors]. **PLRC_EvaluationToolkit** (Version v1.0.0). *Zenodo*. https://doi.org/10.5281/zenodo.21335044
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
