@@ -9,12 +9,19 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 
 ## Repository Structure
 **- `Procedure1_Main.m`:** Script for reconstructing effective spectral reflectance using spectro-fluorescence-photometry (SFP) method and calculating corresponding ESR.
+
 **- `Procedure1_Input.m`:** Input data for Procedure 1.
+
 **- `Procedure2_Main.m`:** Script for combination of the effective spectral reflectance using multi-source post-monochromator spectrometry and calculating corresponding ESR. 
+
 **- `Procedure2_Input.m`:** Input data for Procedure 2.
+
 **- `Procedure3_Main.m`:** Fitting the effective solar reflectance (ESR) using outdoor thermal measurement.
+
 **- `Procedure3_Input.m`:** Input data for Procedure 3.
+
 **- `Procedure4_Main.m`:** Fitting the effective solar reflectance (ESR) using indoor thermal measurement.
+
 **- `Procedure4_Input.m`:** Input data for Procedure 4.
 
 ## Prerequisites
@@ -24,6 +31,7 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 ## Usage Instructions
 1. Clone or download this repository to your local machine.
 2. Open MATLAB and navigate to the downloaded folder.
+3. 
 **3. Execute the procedures sequentially or individually based on your analysis needs:**
    Open `ProcedureX_Input.m` and replace the empty arrays with your actual experimental data.
    Open `ProcedureX_Main.m` to run the code and obtain the corresponding results.
