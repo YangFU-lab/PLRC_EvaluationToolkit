@@ -8,14 +8,14 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 **The toolkit provides a standardized workflow for spectral reflectance measurement and thermal validation for PL-RC materials.
 
 ## Repository Structure
-**- `Procedure1_Main.m`: Script for reconstructing effective spectral reflectance using spectro-fluorescence-photometry (SFP) method and calculating corresponding ESR.**
-**- `Procedure1_Input.m`: Input data for Procedure 1.**
-**- `Procedure2_Main.m`: Script for combination of the effective spectral reflectance using multi-source post-monochromator spectrometry and calculating corresponding ESR. **
-**- `Procedure2_Input.m`: Input data for Procedure 2.**
-**- `Procedure3_Main.m`: Fitting the effective solar reflectance (ESR) using outdoor thermal measurement.**
-**- `Procedure3_Input.m`: Input data for Procedure 3.**
-**- `Procedure4_Main.m`: Fitting the effective solar reflectance (ESR) using indoor thermal measurement.**
-**- `Procedure4_Input.m`: Input data for Procedure 4.**
+**- `Procedure1_Main.m`:** Script for reconstructing effective spectral reflectance using spectro-fluorescence-photometry (SFP) method and calculating corresponding ESR.
+**- `Procedure1_Input.m`:** Input data for Procedure 1.
+**- `Procedure2_Main.m`:** Script for combination of the effective spectral reflectance using multi-source post-monochromator spectrometry and calculating corresponding ESR. 
+**- `Procedure2_Input.m`:** Input data for Procedure 2.
+**- `Procedure3_Main.m`:** Fitting the effective solar reflectance (ESR) using outdoor thermal measurement.
+**- `Procedure3_Input.m`:** Input data for Procedure 3.
+**- `Procedure4_Main.m`:** Fitting the effective solar reflectance (ESR) using indoor thermal measurement.
+**- `Procedure4_Input.m`:** Input data for Procedure 4.
 
 ## Prerequisites
 - **MATLAB** (Tested on R2023a, but should be compatible with recent versions).
