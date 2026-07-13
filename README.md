@@ -31,7 +31,7 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 ## Usage Instructions
 1. Clone or download this repository to your local machine.
 2. Open MATLAB and navigate to the downloaded folder.
-3. **Execute the procedures sequentially or individually based on your analysis needs:**
+3. **Execute the procedures sequentially or individually based on your analysis needs:** 
    Open `ProcedureX_Input.m` and replace the empty arrays with your actual experimental data.
    Open `ProcedureX_Main.m` to run the code and obtain the corresponding results.
 
