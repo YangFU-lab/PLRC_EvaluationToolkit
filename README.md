@@ -38,9 +38,9 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 ## Citation
 If you use this code in your research, please cite our protocol and the Zenodo archive:
 
-> [作者 A., 作者 B., 等]. [论文标题]. *Nature Protocols* (2026). DOI: [论文DOI]
+> [Authors]. [Title]. *Nature Protocols* (2026). DOI: [xxx]
 > 
-> [作者 A., 作者 B., 等]. **PLRC_EvaluationToolkit** (Version v1.0.0). *Zenodo*. https://doi.org/10.5281/zenodo.xxxxxxx
+> [Authors]. **PLRC_EvaluationToolkit** (Version v1.0.0). *Zenodo*. https://doi.org/10.5281/zenodo.xxxxxxx
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
