@@ -25,7 +25,7 @@ This repository contains the **complete suite of** custom MATLAB scripts used fo
 **- `Procedure4_Input.m`:** Input data for Procedure 4.
 
 ## Prerequisites
-- **MATLAB** (Tested on R2023a, but should be compatible with recent versions).
+- **MATLAB** (Developed and tested on MATLAB R2023a. The scripts use standard matrix operations and are expected to be fully compatible with MATLAB R2018a and later versions).
 - **Optimization Toolbox** (Required for non-linear curve fitting functions **in Procedure 4**).
 
 ## Usage Instructions
