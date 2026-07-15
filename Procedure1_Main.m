@@ -1,8 +1,8 @@
 %% Procedure 1: Spectral Reconstruction of PL-RC Materials
 % -------------------------------------------------------------------------
 % Description:
-%   This main script calculates the effective spectral reflectance (ESR) 
-%   of PL-RC materials by reconstructing the reflectance spectrum using 
+%   This main script calculates the effective spectral reflectance & ESR
+%   value of PL-RC materials by reconstructing the reflectance spectrum using 
 %   filter-modified measurements and fluorescence properties.
 %
 % Dependencies:

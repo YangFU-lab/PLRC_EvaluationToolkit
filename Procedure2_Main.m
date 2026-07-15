@@ -1,8 +1,8 @@
 %% Procedure 2: Spectral Combination for Effective Spectral Reflectance
 % -------------------------------------------------------------------------
 % Description:
-%   This main script calculates the effective spectral reflectance (ESR) 
-%   by combining spectral reflectance data obtained from different light 
+%   This main script calculates the effective spectral reflectance & ESR 
+%   value by combining spectral reflectance data obtained from different light 
 %   sources (DH lamp, sun simulator, and conventional spectrometer) across 
 %   their respective valid wavelength ranges.
 %
@@ -35,7 +35,7 @@ disp('Interpolating spectral data for combination...');
 
 % Interpolate data to match the defined wavelength ranges
 R1_DHlamp = interp1(r_DHlamp(:,1), r_DHlamp(:,2), lambda1, 'linear', 'extrap');
-R2_sunsim = interp1(r_sunsim(:,1), r_sunsim(:,2), lambda2, 'linear', 'extrap');
+R2_sunsim = interp1(r_solsim(:,1), r_solsim(:,2), lambda2, 'linear', 'extrap');
 R3_pseudo = interp1(r_pseudo(:,1), r_pseudo(:,2), lambda3, 'linear', 'extrap');
 
 %% 4. Effective Spectral Reflectance Combination
@@ -45,7 +45,7 @@ R_comb = [R1_DHlamp; R2_sunsim; R3_pseudo];
 % Visualization of the combined spectrum vs original data
 figure('Name', 'Spectral Combination Overview', 'Position', [100, 100, 800, 500]);
 semilogy(r_DHlamp(:,1), r_DHlamp(:,2), 'b--', 'LineWidth', 1.5); hold on;
-semilogy(r_sunsim(:,1), r_sunsim(:,2), 'y:', 'LineWidth', 2);
+semilogy(r_solsim(:,1), r_solsim(:,2), 'y:', 'LineWidth', 2);
 semilogy(r_pseudo(:,1), r_pseudo(:,2), 'k-', 'LineWidth', 1);
 semilogy(lambda, R_comb, 'ro', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
 
@@ -53,7 +53,7 @@ semilogy(lambda, R_comb, 'ro', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
 xlabel('Wavelength (nm)'); 
 ylabel('Spectral Reflectance (Log Scale)'); 
 title('Combination of Spectral Reflectance');
-legend('DH Lamp Data', 'Sun Simulator Data', 'Conventional Spectrometer Data', ...
+legend('DH Lamp Data', 'Solar Simulator Data', 'Conventional Spectrometer Data', ...
        'Combined Effective Reflectance', 'Location', 'best');
 grid on;
 
