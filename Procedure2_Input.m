@@ -1949,7 +1949,8 @@ r_pseudo = [2500	0.26854
 ]; 
 
 % 4. Spectral intensity of the light source (e.g., AM 1.5 standard sunlight)
-i_source = [280	2.54E-26
+i_source = [250 0
+280	2.54E-26
 280.5	1.09E-24
 281	6.13E-24
 281.5	2.75E-22

@@ -1,73 +1,245 @@
 %% Procedure 2: Spectral Combination for Effective Spectral Reflectance
-% -------------------------------------------------------------------------
-% Description:
-%   This main script calculates the effective spectral reflectance & ESR 
-%   value by combining spectral reflectance data obtained from different light 
-%   sources (DH lamp, sun simulator, and conventional spectrometer) across 
-%   their respective valid wavelength ranges.
-%
-% Dependencies:
-%   - Procedure2_input_data.m (Must be in the same directory)
-% -------------------------------------------------------------------------
-
+% Run this script from the directory containing Procedure2_Input.m.
+% INPUTS: r_DHlamp, r_solsim, r_pseudo, i_source, each [nm, value].
+% Reflectances must already be dark/reference corrected, dimensionless,
+% and compared at compatible instrumental spectral resolution.
+% Optional third column for reflectance inputs: 1 = valid, 0 = rejected.
+% Invalid rows are not interpolated across. No extrapolation is permitted.
+% Quality/linearity/stability and negligible PL outside the declared
+% emission band must be established experimentally, not inferred here.
 clear; clc; close all;
+run Procedure2_Input.m
 
-%% 1. Load Input Data
-run Procedure2_Input.m 
+%% 1. User-defined physical boundaries and acceptance limits
+cfg.lambdaMin = 250;
+cfg.lambdaMax = 2500;
+cfg.emStart = 450;       % Replace with experimentally determined PL start
+cfg.emEnd = 800;         % Replace with experimentally determined PL end
+cfg.solarReliableMin = 350; 
+cfg.solarReliableMax = 1000;
+cfg.stepNm = 2;          % Sampling interval, NOT instrumental resolution
+cfg.rmseLimit = 0.02;    % Absolute reflectance: 2 percentage point
+cfg.seamLimit = 0.02;    % Proposed operational limit; validate experimentally
+cfg.mode = 'auto';      % 'auto', 'direct', or 'mean'
+% auto: try direct combination; if seams fail, try regional-mean combination.
+% mean: regional-mean combination
+%       DH over [lambdaMin, solarReliableMin);
+%       DH + Solar mean over [solarReliableMin, emStart]; Solar over (emStart, emEnd);
+%       DH + Solar + Pre mean over [emEnd, solarReliableMax];
+%       Pre over (solarReliableMax, lambdaMax].
 
-%% 2. Define Wavelength Ranges
-% Define excitation, emission, and remaining boundaries (Unit: nm)
-lambda_ex_min = 250;  % Min wavelength of excitation
-lambda_ex_max = 450;  % Max wavelength of excitation
-lambda_em_min = 451;  % Min wavelength of emission (determined by PL spectra)
-lambda_em_max = 800;  % Max wavelength of emission
+%% 2. Consistency check, seam assessment and spectral combination
+out = combine_procedure2(r_DHlamp, r_solsim, r_pseudo, i_source, cfg);
+if out.accepted
+    fprintf('Consistency-check confirmed with width of %.1f nm\n', out.checkWidthNm);
+else
+    error('Procedure2:Rejected', '%s', out.message);
+end
+lambda = out.lambda;
+R_comb = out.R_comb;
+I_sc = out.I_sc;
+ESR = out.ESR;
 
-% Generate wavelength arrays for different segments
-lambda1 = (lambda_ex_min:1:lambda_ex_max)';    % Excitation range
-lambda2 = (lambda_em_min:1:lambda_em_max)';    % Emission range
-lambda3 = (lambda_em_max + 1:1:2500)';         % Remaining wavelengths
+%% 3. Visualize calibrated inputs, merged spectrum, and junctions
+figure('Name', 'Procedure 2: spectral combination');
+plot(r_DHlamp(:,1), r_DHlamp(:,2), 'b--'); hold on;
+plot(r_solsim(:,1), r_solsim(:,2), 'Color', [0.85 0.55 0]);
+plot(r_pseudo(:,1), r_pseudo(:,2), 'k:');
+plot(lambda, R_comb, 'r-', 'LineWidth', 1.4);
+xline(cfg.emStart, '--'); xline(cfg.emEnd, '--');
+if strcmp(out.method, 'mean')
+    xline(cfg.solarReliableMin, ':');
+    xline(cfg.solarReliableMax, ':');
+end
+xlabel('Wavelength (nm)'); ylabel('Effective spectral reflectance');
+legend('DH lamp', 'Solar simulator', 'Pre-monochromator', ...
+    'Combined spectrum', 'Location', 'best');
+title('Combination of Spectral Reflectance'); grid on;
 
-% Full wavelength range
-lambda = [lambda1; lambda2; lambda3];
+fprintf('ESR over %.1f-%.1f nm: %.6f\n', cfg.lambdaMin, cfg.lambdaMax, ESR);
+% i_source defines the weighting spectrum. It is AM1.5 only if that is
+% actually the supplied spectrum. Values of R_eff > 1 are retained.
 
-%% 3. Data Interpolation
-disp('Interpolating spectral data for combination...');
+function out = combine_procedure2(rDH, rSolar, rPre, iSource, cfg)
+%COMBINE_PROCEDURE2 Validate and combine independently calibrated spectra.
+% No scale factors are estimated from PL samples. A rejected consistency
+% check requires diagnosis and, where appropriate, calibrated gray-standard
+% measurements. Apply independently validated corrections before rerunning.
+%
+% Each input has two columns [wavelength_nm, value], or three columns with
+% a validity flag (0/1). Nonfinite values or zero validity flags split the
+% spectrum into separate valid runs. Interpolation never crosses such a run
+% boundary. Missing intervals must be explicitly marked by invalid rows.
+% Inputs must be resolution-compatible before calling this function.
 
-% Interpolate data to match the defined wavelength ranges
-R1_DHlamp = interp1(r_DHlamp(:,1), r_DHlamp(:,2), lambda1, 'linear', 'extrap');
-R2_sunsim = interp1(r_solsim(:,1), r_solsim(:,2), lambda2, 'linear', 'extrap');
-R3_pseudo = interp1(r_pseudo(:,1), r_pseudo(:,2), lambda3, 'linear', 'extrap');
+limits = [cfg.lambdaMin cfg.solarReliableMin cfg.emStart cfg.emEnd ...
+    cfg.solarReliableMax cfg.lambdaMax];
+assert(all(isfinite(limits)) && all(diff(limits)>0), ...
+    'Require lambdaMin < solarReliableMin < emStart < emEnd < solarReliableMax < lambdaMax.');
+assert(isscalar(cfg.stepNm) && isfinite(cfg.stepNm) && cfg.stepNm>0);
+assert(isscalar(cfg.rmseLimit) && isfinite(cfg.rmseLimit) && cfg.rmseLimit>=0);
+assert(isscalar(cfg.seamLimit) && isfinite(cfg.seamLimit) && cfg.seamLimit>=0);
+mode = validatestring(cfg.mode, {'auto','direct','mean'});
+% Include exact boundaries even if not integer multiples of stepNm.
+lambda = unique([(cfg.lambdaMin:cfg.stepNm:cfg.lambdaMax)'; limits(:)]);
+R = [validInterp(rDH,lambda), validInterp(rSolar,lambda), ...
+    validInterp(rPre,lambda)];
+% Explicitly exclude unreliable solar measurements beyond 1000 nm (or the
+% independently established limit provided by the user).
+R(lambda>cfg.solarReliableMax,2) = NaN;
 
-%% 4. Effective Spectral Reflectance Combination
-% Combine the three segments into a single effective reflectance spectrum
-R_comb = [R1_DHlamp; R2_sunsim; R3_pseudo];
+out = struct('accepted',false,'status','unchecked','message','', ...
+    'method','','lambda',lambda,'R_inputs',R,'R_comb',[], ...
+    'I_sc',[],'ESR',NaN,'checkWidthNm',0,'cfg',cfg);
+out.consistency = table(); out.directSeams = table();
+out.meanSeams = table(); out.selectedSeams = table();
+out.spectrum = table();
 
-% Visualization of the combined spectrum vs original data
-figure('Name', 'Spectral Combination Overview', 'Position', [100, 100, 800, 500]);
-semilogy(r_DHlamp(:,1), r_DHlamp(:,2), 'b--', 'LineWidth', 1.5); hold on;
-semilogy(r_solsim(:,1), r_solsim(:,2), 'y:', 'LineWidth', 2);
-semilogy(r_pseudo(:,1), r_pseudo(:,2), 'k-', 'LineWidth', 1);
-semilogy(lambda, R_comb, 'ro', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
+%% A. Three pairwise RMSE values on the SAME common valid domain
+mask = lambda>=cfg.emEnd & lambda<=cfg.solarReliableMax ...
+    & all(isfinite(R),2);
+out.checkMask = mask;
+% Only adjacent pairs of valid nodes contribute: do not bridge invalid gaps.
+edge = mask(1:end-1) & mask(2:end);
+dl = diff(lambda);
+width = sum(dl(edge));
+out.checkWidthNm = width;
+if width<=0
+    out.status = 'no_common_interval';
+    out.message = ['No common valid non-emissive interval is available. ' ...
+        'Extend the measured coverage or revise the method; do not extrapolate.'];
+    return
+end
+pairs = [1 2; 1 3; 2 3];
+names = ["DH-Solar"; "DH-Pre"; "Solar-Pre"];
+rmse = zeros(3,1);
+for k=1:3
+    d = R(:,pairs(k,1))-R(:,pairs(k,2));
+    q = (d(1:end-1).^2+d(2:end).^2)/2;
+    rmse(k) = sqrt(sum(dl(edge).*q(edge))/width);
+end
+out.consistency = table(names,rmse,rmse<=cfg.rmseLimit, ...
+    'VariableNames',{'Pair','RMSE','Pass'});
+if any(rmse>cfg.rmseLimit)
+    out.status = 'consistency_failed';
+    out.message = ['At least one pairwise RMSE exceeds the limit. Check ' ...
+        'reference normalization, geometry, stability, signal quality and ' ...
+        'residual PL. Use certified non-fluorescent gray standards to ' ...
+        'diagnose bias; apply only independently validated corrections.'];
+    return
+end
 
-% Formatting the plot
-xlabel('Wavelength (nm)'); 
-ylabel('Spectral Reflectance (Log Scale)'); 
-title('Combination of Spectral Reflectance');
-legend('DH Lamp Data', 'Solar Simulator Data', 'Conventional Spectrometer Data', ...
-       'Combined Effective Reflectance', 'Location', 'best');
-grid on;
+%% B. Direct method seam mismatch at the SAME wavelength, not adjacent samples
+boundaryR = [validInterp(rDH,limits(2:5)'), ...
+    validInterp(rSolar,limits(2:5)'), validInterp(rPre,limits(2:5)')];
+% Rows: solar reliable start, PL start, PL end, solar reliable end.
+directLeft = [boundaryR(2,1); boundaryR(3,2)];
+directRight = [boundaryR(2,2); boundaryR(3,3)];
+out.directSeams = seamTable(limits(3:4)',directLeft,directRight,cfg.seamLimit);
 
-%% 5. Effective Solar Reflectance (ESR) Calculation
-disp('Calculating Effective Solar Reflectance...');
+%% C. Regional-mean method has FOUR boundaries; test each of them
+meanLeft = [boundaryR(1,1); mean(boundaryR(2,1:2)); ...
+    boundaryR(3,2); mean(boundaryR(4,:))];
+meanRight = [mean(boundaryR(1,1:2)); boundaryR(2,2); ...
+    mean(boundaryR(3,:)); boundaryR(4,3)];
+out.meanSeams = seamTable(limits(2:5)',meanLeft,meanRight,cfg.seamLimit);
+if strcmp(mode,'auto')
+    if all(out.directSeams.Pass)
+        method = 'direct';
+    else
+        method = 'mean';
+    end
+else
+    method = mode;
+end
+out.method = method;
+if strcmp(method,'direct')
+    out.selectedSeams = out.directSeams;
+else
+    out.selectedSeams = out.meanSeams;
+end
+if ~all(out.selectedSeams.Pass)
+    out.status = 'seam_failed';
+    out.message = ['The selected combination has an unacceptable or ' ...
+        'unmeasurable boundary mismatch. Equal averaging does not guarantee ' ...
+        'continuity. Check calibration/coverage or revise the overlap windows.'];
+    return
+end
 
-% Interpolate the solar source spectrum to match the combined wavelength array
-I_sc = interp1(i_source(:,1), i_source(:,2), lambda, 'linear', 'extrap');
+%% D. Source assignment: no extrapolation, scaling, clipping or smoothing
+weights = zeros(numel(lambda),3);
+if strcmp(method,'direct')
+    % Direct method
+    weights(lambda<cfg.emStart,1) = 1;
+    weights(lambda>=cfg.emStart & lambda<=cfg.emEnd,2) = 1;
+    weights(lambda>cfg.emEnd,3) = 1;
+else
+    % Regional-mean method
+    weights(lambda<cfg.solarReliableMin,1) = 1;
+    low = lambda>=cfg.solarReliableMin & lambda<=cfg.emStart;
+    weights(low,1:2) = 1/2;
+    weights(lambda>cfg.emStart & lambda<cfg.emEnd,2) = 1;
+    high = lambda>=cfg.emEnd & lambda<=cfg.solarReliableMax;
+    weights(high,:) = 1/3;
+    weights(lambda>cfg.solarReliableMax,3) = 1;
+end
+out.weights = weights;
+missing = any(weights>0 & ~isfinite(R),2);
+out.missingRequiredWavelengths = lambda(missing);
+if any(missing)
+    out.status = 'coverage_failed';
+    out.message = sprintf(['Required valid measured data are missing at ' ...
+        '%d output wavelengths (first: %.3f nm). No extrapolation is allowed.'], ...
+        nnz(missing),lambda(find(missing,1)));
+    return
+end
+% Only zero-weight unavailable inputs may be discarded.
+Rused = R; Rused(weights==0) = 0;
+merged = sum(weights.*Rused,2);
+I = validInterp(iSource,lambda);
+if any(~isfinite(I)) || any(I<0) || trapz(lambda,I)<=0
+    out.status = 'irradiance_failed';
+    out.message = 'The weighting spectrum must be valid over the full integration range, nonnegative, and have positive integral.';
+    return
+end
+out.R_comb = merged;
+out.I_sc = I;
+out.ESR = trapz(lambda,merged.*I)/trapz(lambda,I);
+out.spectrum = table(lambda,merged,I,weights(:,1),weights(:,2),weights(:,3), ...
+    'VariableNames',{'Wavelength_nm','R_eff','I_source','Weight_DH', ...
+    'Weight_Solar','Weight_Pre'});
+out.accepted = true; out.status = 'accepted';
+out.message = 'Consistency, seam and coverage checks passed.';
+end
 
-% Calculate the overall solar reflectance weighted by AM 1.5 spectrum
-P = R_comb .* I_sc;
-ESR = trapz(lambda, P) / trapz(lambda, I_sc);
+function T = seamTable(wavelength,left,right,limit)
+J = abs(left-right);
+pass = isfinite(J) & J<=limit;
+T = table(wavelength,left,right,J,pass, ...
+    'VariableNames',{'Wavelength_nm','LeftValue','RightValue','Mismatch','Pass'});
+end
 
-% Output the final result
-fprintf('========================================\n');
-fprintf('Calculated Effective Solar Reflectance (ESR): %.4f\n', ESR);
-fprintf('========================================\n');
+function yq = validInterp(data,xq)
+assert(isnumeric(data) && ismatrix(data) && size(data,1)>=2 ...
+    && any(size(data,2)==[2 3]), 'Inputs must be N-by-2 or N-by-3 numeric arrays.');
+assert(all(isfinite(data(:,1))), 'Wavelength values must be finite.');
+[x,order] = sort(data(:,1)); data = data(order,:);
+assert(all(diff(x)>0), 'Wavelengths must be unique.');
+valid = isfinite(data(:,2));
+if size(data,2)==3
+    assert(all(ismember(data(:,3),[0 1])), 'Validity flags must be 0 or 1.');
+    valid = valid & data(:,3)==1;
+end
+start = find(diff([false;valid])==1);
+stop = find(diff([valid;false])==-1);
+yq = NaN(size(xq));
+for k=1:numel(start)
+    ind = start(k):stop(k);
+    if numel(ind)==1
+        yq(xq==x(ind)) = data(ind,2);
+    else
+        select = xq>=x(ind(1)) & xq<=x(ind(end));
+        yq(select) = interp1(x(ind),data(ind,2),xq(select),'linear');
+    end
+end
+end

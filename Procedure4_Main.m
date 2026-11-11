@@ -50,6 +50,7 @@ fprintf('a = %e\n', a_nl);
 fprintf('b = %f\n', b_nl);
 fprintf('c = %f\n', c_nl);
 fprintf('-------------------------\n');
+fprintf('Temperature in Kelvin');
 
 %% 3. Visualize Fitted Curve vs Reference Data
 figure('Name', 'Non-linear Fitting Model', 'Position', [100, 100, 600, 500]);
